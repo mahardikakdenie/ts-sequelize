@@ -1,5 +1,6 @@
 // src/controllers/user.controller.ts
-import { Request, Response } from 'express';
+import { Request, RequestHandler, response, Response } from 'express';
+import { body, validationResult } from 'express-validator';
 import {
   getAllUsers,
   getUserByIdService,
@@ -8,13 +9,19 @@ import {
   deleteUserService,
 } from '../services/user.service';
 import { UserCreationAttributes } from '../models/User';
-import { validationResult } from 'express-validator';
+import Json, { successResponse } from 'helper-transformer';
 
 // Mendapatkan semua pengguna
 export const getAllUsersController = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await getAllUsers();
-    res.json(users);
+    res.json({
+      meta: {
+        status: 200,
+        message: 'success'
+      },
+      data: users,
+    });
   } catch (error) {
     res.status(500).json({ error: 'Gagal mengambil data pengguna.' });
   }
@@ -36,24 +43,31 @@ export const getUserByIdController = async (req: Request, res: Response): Promis
 };
 
 // Membuat pengguna baru
-export const createUserController = async (req: Request, res: Response): Promise<void> => {
-  try {
-    // Periksa hasil validasi
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(400).json({ errors: errors.array() });
-      return;
-    }
+export const createUserController: RequestHandler = async (req: Request, res: Response) => {
+  // Definisikan validasi
+  await Promise.all([
+    body('name').notEmpty().withMessage('Nama diperlukan').run(req),
+    body('email').isEmail().withMessage('Email tidak valid').run(req),
+  ]);
 
-    const { name, email } = req.body;
-    const newUser: UserCreationAttributes = { name, email };
-    const createdUser = await createUserService(newUser);
-    res.status(201).json(createdUser);
+  // Periksa hasil validasi
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return;
+  }
+
+  // Ambil data dari body
+  const { name, email } = req.body;
+
+  try {
+    // Panggil service untuk membuat pengguna baru
+    const newUser = await createUserService({ name, email });
+    res.status(201).json(newUser);
   } catch (error) {
     res.status(500).json({ error: 'Gagal membuat pengguna.' });
   }
 };
-
 // Memperbarui pengguna
 export const updateUserController = async (req: Request, res: Response): Promise<void> => {
   try {

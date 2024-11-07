@@ -7,37 +7,22 @@ import {
   updateUserController,
   deleteUserController,
 } from '../controller/user.controller';
-import { body } from 'express-validator';
 
 const router = Router();
 
-// Rute untuk mendapatkan semua pengguna
+// Route untuk mendapatkan semua pengguna
 router.get('/', getAllUsersController);
 
-// Rute untuk mendapatkan pengguna berdasarkan ID
+// Route untuk mendapatkan pengguna berdasarkan ID
 router.get('/:id', getUserByIdController);
 
-// Rute untuk membuat pengguna baru dengan validasi
-router.post(
-  '/',
-  [
-    body('name').notEmpty().withMessage('Nama diperlukan'),
-    body('email').isEmail().withMessage('Email tidak valid'),
-  ],
-  createUserController
-);
+// Route untuk membuat pengguna baru (validasi di dalam controller)
+router.post('/', createUserController);
 
-// Rute untuk memperbarui pengguna dengan validasi
-router.put(
-  '/:id',
-  [
-    body('name').optional().notEmpty().withMessage('Nama tidak boleh kosong'),
-    body('email').optional().isEmail().withMessage('Email tidak valid'),
-  ],
-  updateUserController
-);
+// Route untuk memperbarui pengguna
+router.put('/:id', updateUserController);
 
-// Rute untuk menghapus pengguna
+// Route untuk menghapus pengguna
 router.delete('/:id', deleteUserController);
 
 export default router;
